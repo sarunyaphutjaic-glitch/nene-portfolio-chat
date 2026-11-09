@@ -25,35 +25,60 @@ export async function generateReply(system, messages) {
 /* ---------------- Gemini ---------------- */
 let gemini;
 
-async function askGemini(system, messages) {
-  gemini ??= new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// GEMINI_MODEL ใส่ได้หลายโมเดล คั่นด้วย , เช่น "โมเดลหลัก,โมเดลสำรอง"
+// ถ้าโมเดลแรกไม่ว่าง (503) หรือชนลิมิต (429) จะลองโมเดลถัดไปให้อัตโนมัติ
+const GEMINI_MODELS = (process.env.GEMINI_MODEL || "gemini-3.8-flash")
+  .split(",")
+  .map((m) => m.trim())
+  .filter(Boolean);
+const RETRY_NEXT_MODEL = new Set([429, 500, 503, 504]);
 
-  try {
-    const response = await gemini.models.generateContent({
-      model: process.env.GEMINI_MODEL || "gemini-3.8-flash",
-      // Gemini ใช้ role "model" แทน "assistant"
-      contents: messages.map((m) => ({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }],
-      })),
-      config: {
-        systemInstruction: system,
-        maxOutputTokens: MAX_OUTPUT_TOKENS,
-      },
-    });
-    return response.text;
-  } catch (err) {
-    if (err instanceof GeminiApiError) {
-      console.error("Gemini API error:", err.status, err.message);
-      if (err.status === 429) throw new AIUnavailableError("AI ถูกใช้งานหนาแน่น กรุณาลองใหม่ในอีกสักครู่");
-      if (err.status === 400 || err.status === 401 || err.status === 403) {
-        throw new AIUnavailableError("ระบบ AI ยังไม่พร้อมใช้งาน");
+async function askGemini(system, messages) {
+  gemini ??= new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY,
+    httpOptions: {
+      timeout: 30_000, // รอไม่เกิน 30 วินาที แล้วแจ้ง error แทนการค้าง
+      retryOptions: { attempts: 1 }, // ไม่ลองซ้ำโมเดลเดิม ให้ข้ามไปโมเดลสำรองแทน
+    },
+  });
+
+  // Gemini ใช้ role "model" แทน "assistant"
+  const contents = messages.map((m) => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: [{ text: m.content }],
+  }));
+
+  let lastError;
+  for (const model of GEMINI_MODELS) {
+    try {
+      const response = await gemini.models.generateContent({
+        model,
+        contents,
+        config: { systemInstruction: system, maxOutputTokens: MAX_OUTPUT_TOKENS },
+      });
+      return response.text;
+    } catch (err) {
+      lastError = err;
+      if (err instanceof GeminiApiError) {
+        console.error(`Gemini API error (${model}):`, err.status, err.message);
+        if (RETRY_NEXT_MODEL.has(err.status)) continue; // ลองโมเดลถัดไป
+      } else {
+        console.error(`Gemini error (${model}):`, err?.name, err?.message);
       }
-      throw new AIUnavailableError("ระบบ AI ขัดข้องชั่วคราว กรุณาลองใหม่");
+      break;
     }
-    console.error("Gemini error:", err);
-    throw new AIUnavailableError("เชื่อมต่อ AI ไม่ได้ กรุณาลองใหม่");
   }
+
+  if (lastError instanceof GeminiApiError) {
+    if (lastError.status === 429 || lastError.status === 503) {
+      throw new AIUnavailableError("AI ถูกใช้งานหนาแน่น กรุณาลองใหม่ในอีกสักครู่");
+    }
+    if ([400, 401, 403, 404].includes(lastError.status)) {
+      throw new AIUnavailableError("ระบบ AI ยังไม่พร้อมใช้งาน");
+    }
+    throw new AIUnavailableError("ระบบ AI ขัดข้องชั่วคราว กรุณาลองใหม่");
+  }
+  throw new AIUnavailableError("เชื่อมต่อ AI ไม่ได้ กรุณาลองใหม่");
 }
 
 /* ---------------- Claude ---------------- */
