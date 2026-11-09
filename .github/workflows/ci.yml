@@ -1,0 +1,75 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Lint, Test, Build
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: nene
+          POSTGRES_PASSWORD: nene
+          POSTGRES_DB: nene_portfolio
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://nene:nene@localhost:5432/nene_portfolio
+      AI_MOCK: "true" # เทสต์ไม่เรียก Claude จริง ไม่เสียเครดิต
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Set up database (schema + seed)
+        run: npm run db:setup
+
+      - name: Test API
+        run: npm test
+
+      - name: Build client
+        run: npm run build
+
+  deploy:
+    name: Deploy
+    needs: test
+    # deploy เฉพาะตอน push เข้า main และเทสต์ผ่านแล้วเท่านั้น
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy backend (Render)
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "RENDER_DEPLOY_HOOK_URL not set, skipping"; exit 0; fi
+          curl -fsS -X POST "$HOOK"
+
+      - name: Deploy frontend (Vercel)
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "VERCEL_DEPLOY_HOOK_URL not set, skipping"; exit 0; fi
+          curl -fsS -X POST "$HOOK"

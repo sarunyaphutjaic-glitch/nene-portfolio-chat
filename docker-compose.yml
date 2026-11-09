@@ -1,0 +1,14 @@
+# Postgres สำหรับพัฒนาในเครื่อง: docker compose up -d
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: nene
+      POSTGRES_PASSWORD: nene
+      POSTGRES_DB: nene_portfolio
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
