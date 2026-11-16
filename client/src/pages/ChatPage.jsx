@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "../api.js";
 import { loadConversationId, saveConversationId } from "../chatStore.js";
 import nousImage from "../assets/aha.png";
+import TypeText from "../components/TypeText.jsx";
 
 const WELCOME = {
   role: "assistant",
@@ -20,6 +21,7 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
+  const [typingIndex, setTypingIndex] = useState(null); // ข้อความ AI ที่กำลังพิมพ์ทีละตัว
   const bodyRef = useRef(null);
 
   // โหลดประวัติแชทเดิมจาก PostgreSQL
@@ -49,7 +51,10 @@ export default function ChatPage() {
       const data = await api.sendMessage(conversationId, message);
       setConversationId(data.conversationId);
       saveConversationId(data.conversationId);
-      setMessages((m) => [...m, { role: "assistant", content: data.reply }]);
+      setMessages((m) => {
+        setTypingIndex(m.length + 1); // +1 เพราะมีข้อความต้อนรับอยู่ก่อน
+        return [...m, { role: "assistant", content: data.reply }];
+      });
     } catch (e) {
       setError(e.message);
       setMessages((m) => m.slice(0, -1)); // เอาข้อความที่ส่งไม่สำเร็จออก
@@ -60,6 +65,7 @@ export default function ChatPage() {
   }
 
   function resetChat() {
+    setTypingIndex(null);
     saveConversationId(null);
     setConversationId(null);
     setMessages([]);
@@ -88,7 +94,13 @@ export default function ChatPage() {
           {shown.map((m, i) => (
             <div key={i} className={`message-row ${m.role}`}>
               {m.role === "assistant" && <img src={nousImage} alt="" className="small-avatar" />}
-              <div className={`bubble ${m.role}`}>{m.content}</div>
+              <div className={`bubble ${m.role}`}>
+                {i === typingIndex ? (
+                  <TypeText text={m.content} onDone={() => setTypingIndex(null)} />
+                ) : (
+                  m.content
+                )}
+              </div>
             </div>
           ))}
           {sending && (

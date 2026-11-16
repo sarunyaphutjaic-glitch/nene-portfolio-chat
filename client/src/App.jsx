@@ -3,18 +3,26 @@ import HomePage from "./pages/HomePage.jsx";
 import MemberPage from "./pages/MemberPage.jsx";
 import ChatPage from "./pages/ChatPage.jsx";
 import HistoryPage from "./pages/HistoryPage.jsx";
+import Backdrop from "./components/Backdrop.jsx";
+import ThemePicker from "./components/ThemePicker.jsx";
+import { useTheme } from "./theme.js";
 
 export default function App() {
+  const [theme, setTheme] = useTheme();
   return (
     <>
+      <Backdrop theme={theme} />
       <header className="nav">
         <NavLink to="/" className="brand">เนเน่นายแน่มาก</NavLink>
-        <nav>
-          <NavLink to="/" end>ข้อมูลโปรเจกต์</NavLink>
-          <a href="/#members">สมาชิก</a>
-          <NavLink to="/history">ประวัติการสนทนา</NavLink>
-          <NavLink to="/chat" className="nav-cta">คุยกับ Nous</NavLink>
-        </nav>
+        <div className="nav-right">
+          <nav>
+            <NavLink to="/" end>ข้อมูลโปรเจกต์</NavLink>
+            <a href="/#members">สมาชิก</a>
+            <NavLink to="/history">ประวัติการสนทนา</NavLink>
+            <NavLink to="/chat" className="nav-cta">คุยกับ Nous</NavLink>
+          </nav>
+          <ThemePicker theme={theme} onChange={setTheme} />
+        </div>
       </header>
       <main>
         <Routes>
