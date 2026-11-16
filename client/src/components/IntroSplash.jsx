@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import nousImage from "../assets/aha.png";
+import Astrolabe from "./Astrolabe.jsx";
 import { usePortfolio } from "../usePortfolio.js";
 
 const BOOT_LINES = [
-  "[STATION: ERUDITION CORE] กำลังปลุก Nous...",
-  "เชื่อมต่อคลังปัญญา PostgreSQL ✓",
-  "โหลดข้อมูลสมาชิกและผลงาน ✓",
-  "Universal Omniscience: ONLINE",
+  "> wake nous --core erudition",
+  "> link postgres://knowledge-vault ✓",
+  "> load members, projects ✓",
+  "> omniscience: ONLINE",
 ];
 
 // ฉากหลังดาวแบบ 3 มิติ วาดด้วย canvas: ปกติลอยช้าๆ กดเข้าเว็บแล้ววาร์ปเป็นเส้นแสง
@@ -18,7 +18,7 @@ function useStarfield(canvasRef, warpRef) {
     const color = getComputedStyle(document.documentElement).getPropertyValue("--star").trim() || "#e0f2fe";
     let w, h, raf;
     const stars = Array.from({ length: 700 }, () => ({ x: Math.random() * 2 - 1, y: Math.random() * 2 - 1, z: Math.random() }));
-    let speed = 0.0015;
+    let speed = 0.0012;
 
     function resize() {
       const dpr = window.devicePixelRatio || 1;
@@ -32,13 +32,12 @@ function useStarfield(canvasRef, warpRef) {
     window.addEventListener("resize", resize);
 
     function frame() {
-      const target = warpRef.current ? 0.045 : reduce ? 0 : 0.0015;
+      const target = warpRef.current ? 0.045 : reduce ? 0 : 0.0012;
       speed += (target - speed) * 0.06;
-      ctx.fillStyle = warpRef.current ? "rgba(5, 5, 12, 0.35)" : "rgba(5, 5, 12, 1)";
-      ctx.fillRect(0, 0, w, h);
+      ctx.clearRect(0, 0, w, h);
       ctx.strokeStyle = color;
       ctx.fillStyle = color;
-      const cx = w / 2, cy = h / 2, scale = Math.max(w, h) * 0.6;
+      const cx = w / 2, cy = h / 2, scale = Math.max(w, h) * 0.3;
       for (const s of stars) {
         const pz = s.z;
         s.z -= speed;
@@ -48,16 +47,14 @@ function useStarfield(canvasRef, warpRef) {
           s.z = 1;
           continue;
         }
-        const sx = cx + (s.x / s.z) * scale * 0.5;
-        const sy = cy + (s.y / s.z) * scale * 0.5;
+        const sx = cx + (s.x / s.z) * scale;
+        const sy = cy + (s.y / s.z) * scale;
         const size = (1 - s.z) * 2.2;
         ctx.globalAlpha = Math.min(1, (1 - s.z) * 1.4);
         if (speed > 0.006) {
-          const px = cx + (s.x / pz) * scale * 0.5;
-          const py = cy + (s.y / pz) * scale * 0.5;
           ctx.lineWidth = size;
           ctx.beginPath();
-          ctx.moveTo(px, py);
+          ctx.moveTo(cx + (s.x / pz) * scale, cy + (s.y / pz) * scale);
           ctx.lineTo(sx, sy);
           ctx.stroke();
         } else {
@@ -91,7 +88,7 @@ export default function IntroSplash({ onDone }) {
   }
 
   useEffect(() => {
-    const t = setTimeout(() => enterRef.current?.focus(), 3600);
+    const t = setTimeout(() => enterRef.current?.focus(), 3400);
     function onKey(e) {
       if (e.key === "Escape") onDone();
     }
@@ -103,51 +100,54 @@ export default function IntroSplash({ onDone }) {
   }, [onDone]);
 
   const members = data?.members ?? [];
+  const names = members.map((m) => m.name.split(" ")[0]);
 
   return (
     <div className={`intro ${leaving ? "intro-leaving" : ""}`} role="dialog" aria-modal="true" aria-label="หน้าเปิดเว็บไซต์ เนเน่นายแน่มาก">
+      <div className="intro-nebula" aria-hidden="true" />
       <canvas ref={canvasRef} className="intro-canvas" aria-hidden="true" />
       <div className="intro-vignette" aria-hidden="true" />
 
+      <div className="hud hud-tl" aria-hidden="true">
+        <span className="hud-dot" /> ERUDITION CORE · NENE-01
+      </div>
+      <div className="hud hud-bl" aria-hidden="true">
+        {BOOT_LINES.map((line, i) => (
+          <div key={line} className="boot-line" style={{ animationDelay: `${0.6 + i * 0.35}s` }}>{line}</div>
+        ))}
+      </div>
+      <div className="hud hud-br" aria-hidden="true">RA 05h 35m · DEC −05° 23′<br />AI &amp; DATA ENGINEERING</div>
       <button className="intro-skip" onClick={onDone}>ข้าม ✕</button>
 
       <div className="intro-stage">
-        <div className="intro-core">
-          <span className="ring ring-1" aria-hidden="true" />
-          <span className="ring ring-2" aria-hidden="true" />
-          <span className="ring ring-3" aria-hidden="true" />
-          <span className="pulse" aria-hidden="true" />
-          <img src={nousImage} alt="Nous" className="intro-nous" />
-        </div>
-
-        <div className="intro-boot" aria-hidden="true">
-          {BOOT_LINES.map((line, i) => (
-            <div key={line} className="boot-line" style={{ animationDelay: `${0.9 + i * 0.35}s` }}>{line}</div>
-          ))}
+        <div className="intro-sigil">
+          <Astrolabe names={names} />
         </div>
 
         <h1 className="intro-title">
           {["เนเน่", "นาย", "แน่", "มาก"].map((w, i) => (
-            <span key={w} className="intro-word" style={{ animationDelay: `${2.3 + i * 0.15}s` }}>{w}</span>
+            <span key={w} className="intro-word" style={{ animationDelay: `${1.6 + i * 0.15}s` }}>{w}</span>
           ))}
         </h1>
-        <p className="intro-sub">Project Portfolio · AI and Data Engineering</p>
+        <p className="intro-sub">— คลังปัญญาแห่ง Nous —</p>
 
         {members.length > 0 && (
           <ul className="intro-roster">
             {members.map((m, i) => (
-              <li key={m.id} style={{ animationDelay: `${3 + i * 0.15}s` }}>
-                <strong>{m.name.split(" ")[0]}</strong>
-                <span>{m.role}</span>
+              <li key={m.id} style={{ animationDelay: `${2.4 + i * 0.15}s` }}>
+                <span className="roster-star" aria-hidden="true">✦</span>
+                <span>
+                  <strong>{m.name}</strong>
+                  <em>{m.role}</em>
+                </span>
               </li>
             ))}
           </ul>
         )}
 
         <button ref={enterRef} className="intro-enter" onClick={enter}>
-          เข้าสู่คลังปัญญา
+          <span>เข้าสู่คลังปัญญา</span>
         </button>
-        <p className="intro-hint">กด Esc เพื่อข้าม</p>
       </div>
       <div className="intro-flash" aria-hidden="true" />
     </div>
