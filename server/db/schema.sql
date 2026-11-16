@@ -47,3 +47,8 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages (conversation_id, id);
+
+-- คอลัมน์ที่เพิ่มทีหลัง (ADD COLUMN IF NOT EXISTS: ฐานข้อมูลเดิมที่สร้างไปแล้วก็อัปเดตได้)
+ALTER TABLE members ADD COLUMN IF NOT EXISTS student_id TEXT;
+ALTER TABLE members ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE group_info ADD COLUMN IF NOT EXISTS tech_stack TEXT[] NOT NULL DEFAULT '{}';

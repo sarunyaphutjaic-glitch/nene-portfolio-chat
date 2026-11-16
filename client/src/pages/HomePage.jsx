@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { usePortfolio } from "../usePortfolio.js";
 import ProjectCard from "../components/ProjectCard.jsx";
 import Avatar from "../components/Avatar.jsx";
+import nousImage from "../assets/aha.png";
 
 export default function HomePage() {
   const { data, error, loading } = usePortfolio();
@@ -14,10 +15,11 @@ export default function HomePage() {
     <>
       <section className="hero">
         <div className="container">
+          <img src={nousImage} alt="Nous ผู้ช่วย AI ประจำกลุ่ม" className="hero-nous" />
           <p className="eyebrow">Group Portfolio</p>
           <h1>{group?.name}</h1>
           {group?.tagline && <p className="tagline">{group.tagline}</p>}
-          <Link to="/chat" className="btn">ถาม AI เกี่ยวกับพวกเรา →</Link>
+          <Link to="/chat" className="btn">ถาม Nous เกี่ยวกับพวกเรา →</Link>
         </div>
       </section>
 
@@ -30,6 +32,17 @@ export default function HomePage() {
           ))}
         </ul>
       </section>
+
+      {group?.tech_stack?.length > 0 && (
+        <section className="container section">
+          <h2>เทคโนโลยีที่ใช้</h2>
+          <div className="tags">
+            {group.tech_stack.map((t) => (
+              <span key={t} className="tag">{t}</span>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="container section">
         <h2>ผลงานที่ทำร่วมกัน</h2>
@@ -53,6 +66,7 @@ export default function HomePage() {
                   <span key={s} className="tag">{s}</span>
                 ))}
               </div>
+              <span className="profile-link">ดูโปรไฟล์ →</span>
             </Link>
           ))}
         </div>

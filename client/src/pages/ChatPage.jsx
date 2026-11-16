@@ -1,39 +1,28 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api.js";
+import { loadConversationId, saveConversationId } from "../chatStore.js";
+import nousImage from "../assets/aha.png";
 
-const STORAGE_KEY = "nene-conversation-id";
-const SUGGESTIONS = [
-  "กลุ่มนี้มีแนวคิดอะไร",
-  "สมาชิกแต่ละคนทำหน้าที่อะไร",
-  "ใครเก่ง Backend บ้าง",
-  "ติดต่อกลุ่มได้ทางไหน",
+const WELCOME = {
+  role: "assistant",
+  content: "[STATION: ERUDITION CORE] ข้าคือ Nous ผู้รอบรู้แห่งกลุ่มเนเน่นายแน่มาก จงถามสิ่งที่เจ้าอยากรู้เกี่ยวกับพวกเขามาได้เลย",
+};
+const QUICK_PROMPTS = [
+  "กลุ่ม เนเน่นายแน่มาก คือใคร?",
+  "สมาชิกแต่ละคนทำหน้าที่อะไร?",
+  "ใครถนัด Frontend?",
+  "ติดต่อกลุ่มได้ทางไหน?",
 ];
 
-function loadId() {
-  try {
-    return localStorage.getItem(STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
-function saveId(id) {
-  try {
-    if (id) localStorage.setItem(STORAGE_KEY, id);
-    else localStorage.removeItem(STORAGE_KEY);
-  } catch {
-    /* ignore */
-  }
-}
-
 export default function ChatPage() {
-  const [conversationId, setConversationId] = useState(loadId);
+  const [conversationId, setConversationId] = useState(loadConversationId);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
-  const boxRef = useRef(null);
+  const bodyRef = useRef(null);
 
-  // โหลดประวัติแชทเดิม (เก็บใน PostgreSQL)
+  // โหลดประวัติแชทเดิมจาก PostgreSQL
   useEffect(() => {
     if (!conversationId) return;
     api
@@ -45,8 +34,8 @@ export default function ChatPage() {
   }, []);
 
   useEffect(() => {
-    const box = boxRef.current;
-    if (box) box.scrollTo({ top: box.scrollHeight, behavior: "smooth" });
+    const body = bodyRef.current;
+    if (body) body.scrollTo({ top: body.scrollHeight, behavior: "smooth" });
   }, [messages, sending]);
 
   async function send(text) {
@@ -59,7 +48,7 @@ export default function ChatPage() {
     try {
       const data = await api.sendMessage(conversationId, message);
       setConversationId(data.conversationId);
-      saveId(data.conversationId);
+      saveConversationId(data.conversationId);
       setMessages((m) => [...m, { role: "assistant", content: data.reply }]);
     } catch (e) {
       setError(e.message);
@@ -70,65 +59,78 @@ export default function ChatPage() {
     }
   }
 
-  function newChat() {
-    saveId(null);
+  function resetChat() {
+    saveConversationId(null);
     setConversationId(null);
     setMessages([]);
     setError(null);
   }
 
-  return (
-    <section className="container chat">
-      <div className="chat-header">
-        <div>
-          <h1>คุยกับ AI ของเนเน่นายแน่มาก</h1>
-          <p className="muted">ถามเรื่องกลุ่ม สมาชิก ทักษะ หรือผลงานได้เลย</p>
-        </div>
-        <button className="btn-ghost" onClick={newChat} disabled={sending}>แชทใหม่</button>
-      </div>
+  const shown = [WELCOME, ...messages];
 
-      <div className="chat-box" ref={boxRef}>
-        {messages.length === 0 && (
-          <div className="suggestions">
-            <p className="muted">ลองถามว่า…</p>
-            {SUGGESTIONS.map((s) => (
-              <button key={s} className="chip" onClick={() => send(s)}>{s}</button>
+  return (
+    <section className="chat-page">
+      <div className="chat-wrapper">
+        <div className="chat-header">
+          <div className="who-nous">
+            <img src={nousImage} alt="Nous" className="nous-avatar" />
+            <div>
+              <div className="header-title">Nous (Aeon of Erudition)</div>
+              <div className="header-status">
+                <span className="status-dot" /> Universal Omniscience Active
+              </div>
+            </div>
+          </div>
+          <button className="btn-danger" onClick={resetChat} disabled={sending}>รีเซ็ตแชท</button>
+        </div>
+
+        <div className="chat-body" ref={bodyRef}>
+          {shown.map((m, i) => (
+            <div key={i} className={`message-row ${m.role}`}>
+              {m.role === "assistant" && <img src={nousImage} alt="" className="small-avatar" />}
+              <div className={`bubble ${m.role}`}>{m.content}</div>
+            </div>
+          ))}
+          {sending && (
+            <div className="message-row assistant">
+              <img src={nousImage} alt="" className="small-avatar" />
+              <div className="bubble assistant">
+                <div className="typing-indicator" aria-label="Nous กำลังพิมพ์">
+                  <span /><span /><span />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="chat-footer">
+          {error && <p className="chat-error">⚠ {error}</p>}
+          <div className="quick-prompts">
+            <span className="label">ลองถาม Nous:</span>
+            {QUICK_PROMPTS.map((q) => (
+              <button key={q} className="chip" onClick={() => send(q)} disabled={sending}>{q}</button>
             ))}
           </div>
-        )}
-        {messages.map((m, i) => (
-          <div key={i} className={`bubble ${m.role}`}>
-            <span className="who">{m.role === "user" ? "คุณ" : "AI"}</span>
-            <p>{m.content}</p>
-          </div>
-        ))}
-        {sending && (
-          <div className="bubble assistant typing">
-            <span className="who">AI</span>
-            <p><span className="dot" /><span className="dot" /><span className="dot" /></p>
-          </div>
-        )}
+          <form
+            className="chat-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              send(input);
+            }}
+          >
+            <input
+              className="chat-input"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="ป้อนคำถามถึง Nous..."
+              maxLength={1000}
+              disabled={sending}
+              aria-label="ข้อความ"
+            />
+            <button className="chat-btn" type="submit" disabled={sending || !input.trim()}>ส่ง</button>
+          </form>
+        </div>
       </div>
-
-      {error && <p className="error">⚠ {error}</p>}
-
-      <form
-        className="chat-input"
-        onSubmit={(e) => {
-          e.preventDefault();
-          send(input);
-        }}
-      >
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="พิมพ์คำถาม…"
-          maxLength={1000}
-          disabled={sending}
-          aria-label="ข้อความ"
-        />
-        <button className="btn" type="submit" disabled={sending || !input.trim()}>ส่ง</button>
-      </form>
     </section>
   );
 }

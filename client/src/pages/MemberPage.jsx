@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { usePortfolio } from "../usePortfolio.js";
 import ProjectCard from "../components/ProjectCard.jsx";
@@ -6,6 +7,7 @@ import Avatar from "../components/Avatar.jsx";
 export default function MemberPage() {
   const { id } = useParams();
   const { data, error, loading } = usePortfolio();
+  const [copied, setCopied] = useState(false);
   if (loading) return <p className="container status">กำลังโหลด…</p>;
   if (error) return <p className="container status error">โหลดข้อมูลไม่สำเร็จ: {error}</p>;
 
@@ -27,6 +29,25 @@ export default function MemberPage() {
         </div>
       </div>
 
+      {(member.student_id || member.email) && (
+        <div className="info-box">
+          {member.student_id && <div>รหัสนักศึกษา: <strong>{member.student_id}</strong></div>}
+          {member.email && (
+            <div>
+              ติดต่อ: <a href={`mailto:${member.email}`}>{member.email}</a>
+              <button
+                className="copy-btn"
+                onClick={() => {
+                  navigator.clipboard?.writeText(member.email).then(() => setCopied(true), () => {});
+                }}
+              >
+                {copied ? "คัดลอกแล้ว" : "คัดลอก"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {member.bio && <p className="lead">{member.bio}</p>}
 
       <h2>ทักษะ</h2>
@@ -45,7 +66,7 @@ export default function MemberPage() {
         )}
       </div>
 
-      <Link to="/chat" className="btn">ถาม AI เกี่ยวกับ {member.nickname || member.name} →</Link>
+      <Link to="/chat" className="btn">ถาม Nous เกี่ยวกับ {member.nickname || member.name.split(" ")[0]} →</Link>
     </section>
   );
 }
