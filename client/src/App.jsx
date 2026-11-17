@@ -33,7 +33,7 @@ export default function App() {
 
   return (
     <>
-      {showIntro && <IntroSplash onDone={closeIntro} />}
+      {showIntro && <IntroSplash onDone={closeIntro} theme={theme} />}
       <Backdrop theme={theme} />
       <header className="nav">
         <NavLink to="/" className="brand">เนเน่นายแน่มาก</NavLink>
