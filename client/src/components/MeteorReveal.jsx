@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Avatar from "./Avatar.jsx";
 
 function hexToRgb(hex) {
@@ -109,7 +110,8 @@ export default function MeteorReveal({ member, index, color, onClose, onOpen }) 
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  return (
+  // วาดไว้ที่ body โดยตรง เพื่อให้คลุมทั้งจอ รวมถึงแถบเมนูด้านบน
+  return createPortal(
     <div
       className="meteor"
       style={{ "--star-color": color }}
@@ -140,6 +142,7 @@ export default function MeteorReveal({ member, index, color, onClose, onOpen }) 
         </div>
       )}
       {!revealed && <p className="meteor-hint">แตะเพื่อข้าม</p>}
-    </div>
+    </div>,
+    document.body,
   );
 }

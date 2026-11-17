@@ -31,7 +31,7 @@ export default function HomePage({ theme }) {
   return (
     <>
       <section className="g-hero">
-        <GalaxyHero theme={theme} members={members} />
+        <GalaxyHero theme={theme} members={members} colors={STAR_COLORS} onPick={(i) => setReveal({ member: members[i], index: i })} />
         <div className="g-hero-fade" aria-hidden="true" />
         <div className="container g-hero-content">
           <p className="g-kicker">GROUP PORTFOLIO · AI &amp; DATA ENGINEERING</p>
@@ -40,6 +40,14 @@ export default function HomePage({ theme }) {
           <div className="g-actions">
             <Link to="/chat" className="btn">คุยกับ Nous →</Link>
             <a href="#members" className="btn-ghost">พบกับสมาชิก</a>
+          </div>
+          <div className="g-pick" role="group" aria-label="เรียกดาวของสมาชิก">
+            <span className="g-pick-hint">✦ แตะดาวบนกาแล็กซีเพื่อเรียกสมาชิก</span>
+            {members.slice(0, 3).map((m, i) => (
+              <button key={m.id} className="sr-only" onClick={() => setReveal({ member: m, index: i })}>
+                เรียกดาวของ {m.name}
+              </button>
+            ))}
           </div>
           <dl className="g-stats">
             <div><dt>สมาชิก</dt><dd>{members.length}</dd></div>
@@ -95,10 +103,6 @@ export default function HomePage({ theme }) {
               to={`/members/${m.id}`}
               className="card member-card g-member"
               style={{ "--star-color": STAR_COLORS[i % STAR_COLORS.length] }}
-              onClick={(e) => {
-                e.preventDefault(); // เล่นดาวตกก่อน แล้วค่อยให้เลือกไปหน้าโปรไฟล์
-                setReveal({ member: m, index: i });
-              }}
             >
               <span className="g-member-no">STAR 0{i + 1}</span>
               <span className="g-ring"><Avatar member={m} size={84} /></span>
@@ -109,19 +113,10 @@ export default function HomePage({ theme }) {
                   <span key={s} className="tag">{s}</span>
                 ))}
               </div>
-              <span className="profile-link">แตะเพื่อเรียกดาว ✦</span>
+              <span className="profile-link">ดูโปรไฟล์ →</span>
             </Link>
           ))}
         </div>
-        {reveal && (
-          <MeteorReveal
-            member={reveal.member}
-            index={reveal.index}
-            color={STAR_COLORS[reveal.index % STAR_COLORS.length]}
-            onClose={() => setReveal(null)}
-            onOpen={() => navigate(`/members/${reveal.member.id}`)}
-          />
-        )}
       </section>
 
       <section id="contact" className="container section">
@@ -147,6 +142,16 @@ export default function HomePage({ theme }) {
           <Link to="/chat" className="btn">เริ่มคุยกับ Nous →</Link>
         </div>
       </section>
+
+      {reveal && (
+        <MeteorReveal
+          member={reveal.member}
+          index={reveal.index}
+          color={STAR_COLORS[reveal.index % STAR_COLORS.length]}
+          onClose={() => setReveal(null)}
+          onOpen={() => navigate(`/members/${reveal.member.id}`)}
+        />
+      )}
     </>
   );
 }

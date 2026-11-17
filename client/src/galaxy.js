@@ -44,7 +44,7 @@ function buildStars(pal, count) {
 export function startGalaxy(canvas, options = {}) {
   const {
     theme = "nous", count = 5200, centerX = 0.5, centerY = 0.4, scale = 0.52,
-    background = true, getNames = () => [], formSeconds = 2.8,
+    background = true, getNames = () => [], formSeconds = 2.8, getHover = () => -1,
   } = options;
   const pal = GALAXY_PALETTES[theme] ?? GALAXY_PALETTES.nous;
   const ctx = canvas.getContext("2d");
@@ -54,6 +54,7 @@ export function startGalaxy(canvas, options = {}) {
   const core = colorAt(pal, 0);
   const t0 = performance.now();
   let raf, last = t0, zoom = 1, spinMul = 1, rot = 0, warp = false, paused = false;
+  let hits = []; // ตำแหน่งดาวสมาชิกบนจอ ใช้ตรวจว่าผู้ชมกดโดนดาวไหน
 
   function frame(now) {
     raf = requestAnimationFrame(frame);
@@ -117,25 +118,37 @@ export function startGalaxy(canvas, options = {}) {
     // ดาวสมาชิก 3 ดวง อยู่ปลายแขนกาแล็กซีละแขน
     const show = warp ? 0 : Math.max(0, Math.min(1, (t - formSeconds - 0.2) / 1.2));
     const names = getNames();
+    const hover = getHover();
+    hits = [];
     if (show > 0) {
       for (let m = 0; m < Math.min(3, names.length); m++) {
         const mr = 0.6, mth = m * 2.094 + mr * 4.6 + rot * (0.35 + 0.65 * (1 - mr));
         const mx0 = Math.cos(mth) * mr, my0 = Math.sin(mth) * mr * tilt;
         const mx = cx + (mx0 * ct - my0 * st) * S, my = cy + (mx0 * st + my0 * ct) * S;
+        const mc = names[m].rgb ?? core;
+        const hov = hover === m;
+        const gr = hov ? 44 + 4 * Math.sin(t * 6) : 26;
         ctx.globalCompositeOperation = "lighter";
         ctx.globalAlpha = 1;
-        const g = ctx.createRadialGradient(mx, my, 0, mx, my, 26);
+        const g = ctx.createRadialGradient(mx, my, 0, mx, my, gr);
         g.addColorStop(0, `rgba(255,255,255,${0.95 * show})`);
-        g.addColorStop(0.25, `rgba(${core[0]},${core[1]},${core[2]},${0.5 * show})`);
+        g.addColorStop(0.25, `rgba(${mc[0]},${mc[1]},${mc[2]},${(hov ? 0.85 : 0.6) * show})`);
         g.addColorStop(1, "rgba(0,0,0,0)");
         ctx.fillStyle = g;
-        ctx.fillRect(mx - 26, my - 26, 52, 52);
+        ctx.fillRect(mx - gr, my - gr, gr * 2, gr * 2);
         ctx.strokeStyle = `rgba(255,255,255,${0.7 * show})`;
         ctx.lineWidth = 1;
+        const sp = hov ? 26 : 18;
         ctx.beginPath();
-        ctx.moveTo(mx - 18, my); ctx.lineTo(mx + 18, my);
-        ctx.moveTo(mx, my - 18); ctx.lineTo(mx, my + 18);
+        ctx.moveTo(mx - sp, my); ctx.lineTo(mx + sp, my);
+        ctx.moveTo(mx, my - sp); ctx.lineTo(mx, my + sp);
         ctx.stroke();
+        if (names[m].rgb) {
+          // วงแหวนกระเพื่อม บอกว่าดาวนี้กดได้
+          const pulse = (t * 0.6 + m * 0.33) % 1;
+          ctx.strokeStyle = `rgba(${mc[0]},${mc[1]},${mc[2]},${(1 - pulse) * 0.7 * show})`;
+          ctx.beginPath(); ctx.arc(mx, my, 10 + pulse * 26, 0, 6.283); ctx.stroke();
+        }
 
         ctx.globalCompositeOperation = "source-over";
         ctx.globalAlpha = show;
@@ -152,9 +165,10 @@ export function startGalaxy(canvas, options = {}) {
         ctx.fillStyle = "#ffffff";
         ctx.font = "600 15px Kanit, 'Noto Sans Thai', sans-serif";
         ctx.fillText(names[m].name, tx, my - 2);
-        ctx.fillStyle = pal.accent;
+        ctx.fillStyle = names[m].rgb ? `rgb(${mc[0]},${mc[1]},${mc[2]})` : pal.accent;
         ctx.font = "300 12px Kanit, 'Noto Sans Thai', sans-serif";
         ctx.fillText(names[m].role, tx, my + 14);
+        hits.push({ x: mx, y: my, x1: left ? tx - tw : tx, x2: left ? tx : tx + tw, y1: my - 18, y2: my + 20 });
       }
     }
     ctx.globalAlpha = 1;
@@ -166,6 +180,10 @@ export function startGalaxy(canvas, options = {}) {
     accent: pal.accent,
     warp() { warp = true; },
     pause(v) { paused = v; },
+    // คืนลำดับดาวสมาชิกที่อยู่ตรงจุด (x, y) บน canvas หรือ -1 ถ้าไม่โดน
+    hitTest(x, y) {
+      return hits.findIndex((h) => Math.hypot(x - h.x, y - h.y) < 30 || (x >= h.x1 - 6 && x <= h.x2 + 6 && y >= h.y1 && y <= h.y2));
+    },
     stop() { cancelAnimationFrame(raf); },
   };
 }
