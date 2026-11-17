@@ -49,7 +49,7 @@ export default function App() {
       </header>
       <main>
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<HomePage theme={theme} />} />
           <Route path="/members/:id" element={<MemberPage />} />
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/history" element={<HistoryPage />} />

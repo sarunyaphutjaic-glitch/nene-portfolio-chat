@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 export const THEMES = [
-  { id: "nous", label: "Nous Cosmic" },
+  { id: "nous", label: "Nous Galaxy" },
   { id: "terminal", label: "Terminal" },
   { id: "party", label: "Party RPG" },
 ];
