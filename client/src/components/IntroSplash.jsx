@@ -197,16 +197,15 @@ export default function IntroSplash({ onDone, theme = "nous" }) {
       <canvas ref={canvasRef} className="intro-canvas" aria-hidden="true" />
       <div className="intro-vignette" aria-hidden="true" />
 
-      <div className="intro-hud" aria-hidden="true">GALAXY NENE-01 · 3 SPIRAL ARMS</div>
       <button className="intro-skip" onClick={onDone}>ข้าม ✕</button>
 
       <div className="intro-stage">
-        <div className="intro-kicker">THE KNOWLEDGE GALAXY OF NOUS</div>
+        <div className="intro-kicker">GROUP PORTFOLIO · AI &amp; DATA ENGINEERING</div>
         <h1 className="intro-title">เนเน่นายแน่มาก</h1>
-        <p className="intro-sub">ดาวนับพันรวมตัวเป็นหนึ่งเดียว — สามแขนแห่งกาแล็กซี คือสามคนของเรา</p>
+        <p className="intro-sub">พอร์ตโฟลิโอของกลุ่ม พร้อม Nous ผู้ช่วย AI ที่ตอบได้ทุกเรื่องเกี่ยวกับพวกเรา</p>
         <button ref={enterRef} className="intro-enter" onClick={enter}>
           <span className="intro-shine" aria-hidden="true" />
-          เข้าสู่กาแล็กซี
+          เข้าสู่เว็บไซต์
         </button>
       </div>
       <div className="intro-flash" aria-hidden="true" />
