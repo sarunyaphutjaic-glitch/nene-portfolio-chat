@@ -1,11 +1,13 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { usePortfolio } from "../usePortfolio.js";
 import ProjectCard from "../components/ProjectCard.jsx";
 import Avatar from "../components/Avatar.jsx";
 import GalaxyHero from "../components/GalaxyHero.jsx";
+import MeteorReveal from "../components/MeteorReveal.jsx";
 
-// สีประจำตัวสมาชิก (ตรงกับดาวบนหน้าเปิด)
-const STAR_COLORS = ["#ffb547", "#ff5fa2", "#4fd1ff"];
+// สีประจำตัวสมาชิก: คนที่ 1 ทอง, คนที่ 2 ฟ้า, คนที่ 3 ชมพู
+const STAR_COLORS = ["#ffb547", "#4fd1ff", "#ff5fa2"];
 
 function SectionHead({ no, en, th }) {
   return (
@@ -18,6 +20,8 @@ function SectionHead({ no, en, th }) {
 
 export default function HomePage({ theme }) {
   const { data, error, loading } = usePortfolio();
+  const navigate = useNavigate();
+  const [reveal, setReveal] = useState(null); // { member, index } ของการ์ดที่กด
   if (loading) return <p className="container status">กำลังโหลด…</p>;
   if (error) return <p className="container status error">โหลดข้อมูลไม่สำเร็จ: {error}</p>;
 
@@ -91,6 +95,10 @@ export default function HomePage({ theme }) {
               to={`/members/${m.id}`}
               className="card member-card g-member"
               style={{ "--star-color": STAR_COLORS[i % STAR_COLORS.length] }}
+              onClick={(e) => {
+                e.preventDefault(); // เล่นดาวตกก่อน แล้วค่อยให้เลือกไปหน้าโปรไฟล์
+                setReveal({ member: m, index: i });
+              }}
             >
               <span className="g-member-no">STAR 0{i + 1}</span>
               <span className="g-ring"><Avatar member={m} size={84} /></span>
@@ -101,10 +109,19 @@ export default function HomePage({ theme }) {
                   <span key={s} className="tag">{s}</span>
                 ))}
               </div>
-              <span className="profile-link">ดูโปรไฟล์ →</span>
+              <span className="profile-link">แตะเพื่อเรียกดาว ✦</span>
             </Link>
           ))}
         </div>
+        {reveal && (
+          <MeteorReveal
+            member={reveal.member}
+            index={reveal.index}
+            color={STAR_COLORS[reveal.index % STAR_COLORS.length]}
+            onClose={() => setReveal(null)}
+            onOpen={() => navigate(`/members/${reveal.member.id}`)}
+          />
+        )}
       </section>
 
       <section id="contact" className="container section">
