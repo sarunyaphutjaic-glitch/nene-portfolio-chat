@@ -1,10 +1,13 @@
 import pg from "pg";
 
-if (!process.env.DATABASE_URL) {
+// บน Vercel ฐานข้อมูลที่สร้างจากเมนู Storage อาจตั้งชื่อตัวแปรเป็น POSTGRES_URL
+export const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+
+if (!databaseUrl) {
   console.warn("⚠ DATABASE_URL is not set");
 }
 
-export const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+export const pool = new pg.Pool({ connectionString: databaseUrl, max: process.env.VERCEL ? 3 : 10 });
 
 /** ดึงข้อมูล portfolio ทั้งหมด: กลุ่ม, สมาชิก (พร้อมผลงาน), ผลงานกลุ่ม */
 export async function getPortfolio() {

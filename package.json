@@ -12,7 +12,8 @@
     "db:setup": "npm run db:setup -w server",
     "lint": "eslint .",
     "test": "npm test -w server",
-    "build": "npm run build -w client"
+    "build": "npm run build -w client",
+    "vercel-build": "node server/scripts/db-setup.js --if-configured && npm run build -w client"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

@@ -54,20 +54,13 @@ jobs:
         run: npm run build
 
   deploy:
-    name: Deploy
+    name: Deploy (Vercel)
     needs: test
     # deploy เฉพาะตอน push เข้า main และเทสต์ผ่านแล้วเท่านั้น
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy backend (Render)
-        env:
-          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
-        run: |
-          if [ -z "$HOOK" ]; then echo "RENDER_DEPLOY_HOOK_URL not set, skipping"; exit 0; fi
-          curl -fsS -X POST "$HOOK"
-
-      - name: Deploy frontend (Vercel)
+      - name: Trigger Vercel deploy hook
         env:
           HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: |

@@ -18,7 +18,7 @@
 
 ```
 React (Vite) ──► Express API ──► PostgreSQL
-  Vercel           Render     │     Neon
+  Vercel      Vercel Function │  Vercel Storage (Neon)
                               └──► Gemini / Claude API (system prompt สร้างจากข้อมูลใน DB)
 ```
 
@@ -28,7 +28,7 @@ React (Vite) ──► Express API ──► PostgreSQL
 | Backend | Node.js 22 + Express 5 |
 | Database | PostgreSQL 16 |
 | AI | Gemini (`@google/genai`) เป็นค่าเริ่มต้น หรือ Claude (`@anthropic-ai/sdk`) เลือกด้วย `AI_PROVIDER` |
-| CI/CD | GitHub Actions → Render + Vercel |
+| CI/CD | GitHub Actions → Vercel |
 
 ### การทำงานของแชท (`POST /api/chat`)
 1. รับข้อความจาก Chat UI
@@ -105,23 +105,22 @@ npm run build   # build frontend
 
 `.github/workflows/ci.yml`
 - **ทุก Pull Request และ push เข้า `main`:** lint → สร้าง DB (Postgres service) → test → build
-- **push เข้า `main` และเทสต์ผ่าน:** trigger deploy ไป Render (backend) และ Vercel (frontend) ผ่าน deploy hook
+- **push เข้า `main` และเทสต์ผ่าน:** trigger deploy ไป Vercel ผ่าน deploy hook
 
-### ตั้งค่า deploy (ทำครั้งเดียว)
-1. **Database:** สร้าง Postgres บน [Neon](https://neon.tech) คัดลอก connection string แล้วรัน
-   `DATABASE_URL="<neon-url>" npm run db:setup`
-2. **Backend (Render):** New → Web Service → เลือก repo
-   - Root Directory: `server` · Build: `npm install` · Start: `npm start`
-   - Environment: `DATABASE_URL`, `AI_PROVIDER`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `CLIENT_URL`
-   - Settings → Auto-Deploy: **Off** (ให้ GitHub Actions เป็นคน deploy หลังเทสต์ผ่าน)
-   - Settings → Deploy Hook: คัดลอก URL
-3. **Frontend (Vercel):** Import repo → Root Directory: `client` · Framework: Vite
-   - Environment: `VITE_API_URL=<URL ของ Render>`
-   - Settings → Git → Deploy Hooks: สร้าง hook คัดลอก URL
-   - ปิด auto-deploy ของ Vercel (Settings → Git → Ignored Build Step: `exit 0`) ถ้าต้องการให้ deploy ผ่าน Actions อย่างเดียว
-4. **GitHub:** Settings → Secrets and variables → Actions เพิ่ม
-   `RENDER_DEPLOY_HOOK_URL` และ `VERCEL_DEPLOY_HOOK_URL`
-5. (แนะนำ) Settings → Branches → ตั้ง branch protection ให้ `main` ต้องผ่าน CI ก่อน merge
+### Deploy ขึ้น Vercel (ทำครั้งเดียว)
+
+ทั้งระบบอยู่บน Vercel ที่เดียว:
+- หน้าเว็บ React build จาก `client/` (ไฟล์ออกที่ `client/dist`)
+- Express API ทำงานเป็น serverless function ที่ `api/index.js` (ทุก `/api/*`)
+- ฐานข้อมูล Postgres สร้างจากเมนู Storage ของ Vercel
+- ตอน build สคริปต์ `npm run vercel-build` จะสร้างตารางและใส่ข้อมูลจาก `seed.sql` ให้อัตโนมัติ
+
+ขั้นตอน:
+1. vercel.com → **Add New… → Project** → Import repo นี้ (Root Directory = ค่าเริ่มต้น `./`, ไม่ต้องแก้ build settings เพราะอยู่ใน `vercel.json` แล้ว)
+2. **Environment Variables**: `GEMINI_API_KEY`, `GEMINI_MODEL`, `AI_MOCK=false` แล้วกด **Deploy**
+3. ในโปรเจกต์ → **Storage → Create Database → Neon (Postgres)** → Connect กับโปรเจกต์นี้ (จะได้ตัวแปร `DATABASE_URL` อัตโนมัติ)
+4. **Deployments → Redeploy** หนึ่งครั้ง เพื่อให้สร้างตารางและใส่ข้อมูล
+5. (CI/CD) Settings → Git → **Deploy Hooks** สร้าง hook แล้วใส่เป็น GitHub secret `VERCEL_DEPLOY_HOOK_URL`
 
 ## สมาชิกและหน้าที่
 
