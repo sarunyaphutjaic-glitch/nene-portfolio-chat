@@ -11,8 +11,8 @@
 | คุยกับ Nous | `/chat` | แชท AI พร้อมคำถามลัด ปุ่มรีเซ็ตแชท |
 | ประวัติการสนทนา | `/history` | ดึงประวัติแชทจาก PostgreSQL |
 
-- **เว็บที่ deploy แล้ว:** TODO ใส่ลิงก์
-- **API:** TODO ใส่ลิงก์
+- **เว็บที่ deploy แล้ว:** https://nene-portfolio-chat.vercel.app
+- **API (เช็กสถานะระบบ):** https://nene-portfolio-chat.vercel.app/api/health
 
 ## สถาปัตยกรรม
 
