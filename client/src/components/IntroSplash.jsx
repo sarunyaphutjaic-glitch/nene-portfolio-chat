@@ -10,13 +10,15 @@ export default function IntroSplash({ onDone, theme = "nous" }) {
   const enterRef = useRef(null);
   const [leaving, setLeaving] = useState(false);
   const [phase, setPhase] = useState("galaxy");
-  const getNames = useCallback(() => namesRef.current, []);
+  const projectRef = useRef("");
+  const getInfo = useCallback(() => ({ names: namesRef.current, project: projectRef.current }), []);
   const { data } = usePortfolio();
   const accent = (GALAXY_PALETTES[theme] ?? GALAXY_PALETTES.nous).accent;
 
   // ส่งชื่อสมาชิกจากฐานข้อมูลให้ลูปวาด canvas ใช้
   useEffect(() => {
     namesRef.current = (data?.members ?? []).slice(0, 3).map((m) => ({ name: m.name.split(" ")[0], role: m.role }));
+    projectRef.current = data?.groupProjects?.[0]?.title ?? "";
   }, [data]);
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export default function IntroSplash({ onDone, theme = "nous" }) {
     setTimeout(() => setPhase("moon"), 1550);
   }
 
-  if (phase === "moon") return <MoonLanding onDone={onDone} getNames={getNames} />;
+  if (phase === "moon") return <MoonLanding onDone={onDone} getInfo={getInfo} />;
 
   return (
     <div
