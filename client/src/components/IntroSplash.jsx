@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePortfolio } from "../usePortfolio.js";
 import { GALAXY_PALETTES, startGalaxy } from "../galaxy.js";
+import MoonLanding from "./MoonLanding.jsx";
 
 export default function IntroSplash({ onDone, theme = "nous" }) {
   const canvasRef = useRef(null);
@@ -8,6 +9,8 @@ export default function IntroSplash({ onDone, theme = "nous" }) {
   const namesRef = useRef([]);
   const enterRef = useRef(null);
   const [leaving, setLeaving] = useState(false);
+  const [phase, setPhase] = useState("galaxy");
+  const getNames = useCallback(() => namesRef.current, []);
   const { data } = usePortfolio();
   const accent = (GALAXY_PALETTES[theme] ?? GALAXY_PALETTES.nous).accent;
 
@@ -17,12 +20,14 @@ export default function IntroSplash({ onDone, theme = "nous" }) {
   }, [data]);
 
   useEffect(() => {
+    if (phase !== "galaxy") return;
     const g = startGalaxy(canvasRef.current, { theme, getNames: () => namesRef.current });
     galaxyRef.current = g;
     return () => g.stop();
-  }, [theme]);
+  }, [theme, phase]);
 
   useEffect(() => {
+    if (phase !== "galaxy") return;
     const t = setTimeout(() => enterRef.current?.focus(), 4000);
     function onKey(e) {
       if (e.key === "Escape") onDone();
@@ -32,14 +37,17 @@ export default function IntroSplash({ onDone, theme = "nous" }) {
       clearTimeout(t);
       window.removeEventListener("keydown", onKey);
     };
-  }, [onDone]);
+  }, [onDone, phase]);
 
   function enter() {
     if (leaving) return;
     galaxyRef.current?.warp();
     setLeaving(true);
-    setTimeout(onDone, 2000);
+    // หลังวาร์ป ต่อด้วยฉากลงจอดบนดวงจันทร์
+    setTimeout(() => setPhase("moon"), 1550);
   }
+
+  if (phase === "moon") return <MoonLanding onDone={onDone} getNames={getNames} />;
 
   return (
     <div
