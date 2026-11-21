@@ -36,7 +36,7 @@ export default function App() {
       {showIntro && <IntroSplash onDone={closeIntro} theme={theme} />}
       <Backdrop theme={theme} />
       <header className="nav">
-        <NavLink to="/" className="brand">เนเน่นายแน่มาก</NavLink>
+        <NavLink to="/" className="brand">เนเน่เธอแน่มาก</NavLink>
         <div className="nav-right">
           <nav>
             <NavLink to="/" end>ข้อมูลโปรเจกต์</NavLink>
