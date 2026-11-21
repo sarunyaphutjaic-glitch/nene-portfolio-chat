@@ -28,7 +28,7 @@ jobs:
 
     env:
       DATABASE_URL: postgres://nene:nene@localhost:5432/nene_portfolio
-      AI_MOCK: "true" # เทสต์ไม่เรียก Claude จริง ไม่เสียเครดิต
+      AI_MOCK: "true" # เทสต์ไม่เรียก Gemini จริง ไม่เปลือง quota
 
     steps:
       - uses: actions/checkout@v4
